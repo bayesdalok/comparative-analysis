@@ -1,0 +1,436 @@
+---
+title: "proj"
+output: html_document
+---
+
+```{r}
+library(readr)
+library(irr)
+
+# Import the CSV file
+data <- read_csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Convert comma-separated values to numeric
+clean_data <- apply(data, 2, function(x) as.numeric(gsub(",", ".", x)))
+
+# Convert the cleaned data to a matrix
+data_matrix <- as.matrix(clean_data)
+
+# Check the cleaned data
+print(head(data_matrix))
+
+kripp_alpha <- kappam.fleiss(data_matrix)
+
+# Print the result
+kripp_alpha
+```
+```{r}
+# Step 1: Load necessary libraries
+  # Install the psych package if not already installed
+library(psych)
+# Step 2: Read the data
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Step 3: Prepare the data
+# Assuming the first row is the header and the data starts from the second row
+# Convert the data to a numeric matrix for EFA
+clean_data <- apply(data, 2, function(x) as.numeric(gsub(",", ".", x)))
+data_matrix <- as.matrix(clean_data)
+
+# Step 4: Perform EFA
+# Determine the number of factors using parallel analysis
+fa.parallel(data_matrix, fa="fa", n.iter=100)
+
+# Perform EFA with the determined number of factors
+# Replace 'nfactors' with the number of factors suggested by parallel analysis
+efa_result <- fa(data_matrix, nfactors=3, rotate="varimax")
+
+# Step 5: Interpret the results
+print(efa_result$loadings, cutoff=0.3)  # Print factor loadings
+summary(efa_result)  # Summary of the EFA results
+
+# Visualize the factor loadings
+fa.diagram(efa_result)
+```
+```{r}
+# Install necessary packages if not already installed
+if (!require(psych)) install.packages("psych", dependencies=TRUE)
+if (!require(GPArotation)) install.packages("GPArotation", dependencies=TRUE)
+
+# Load required libraries
+library(psych)
+library(GPArotation)
+
+# Load dataset (replace 'my_data.csv' with your actual file)
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv", header=TRUE)
+
+# Remove non-numeric columns (if any)
+data_numeric <- data[sapply(data, is.numeric)]
+
+# Check data suitability for factor analysis
+# Bartlett's test of sphericity (should be significant)
+bartlett.test(data_numeric)
+
+# Kaiser-Meyer-Olkin (KMO) test (should be > 0.6 for sampling adequacy)
+KMO(data_numeric)
+
+# Determine the optimal number of factors using scree plot
+fa.parallel(data_numeric, fa="fa", n.iter=100)
+
+# Choose an appropriate number of factors (e.g., based on eigenvalues >1 or scree plot)
+num_factors <- 3  # Change based on scree plot or parallel analysis
+
+# Perform Exploratory Factor Analysis
+efa_model <- fa(data_numeric, nfactors=num_factors, rotate="varimax", fm="ml")
+
+# Print factor loadings
+print(efa_model$loadings)
+
+# Visualize factor loadings
+fa.diagram(efa_model)
+
+# Get factor scores (optional)
+factor_scores <- factor.scores(data_numeric, efa_model)
+
+# View factor scores
+head(factor_scores$scores)
+```
+```{r}
+
+# Install necessary packages if not already installed
+if (!require(psych)) install.packages("psych", dependencies=TRUE)
+if (!require(GPArotation)) install.packages("GPArotation", dependencies=TRUE)
+
+# Load required libraries
+library(psych)
+library(GPArotation)
+
+# Load dataset (replace 'my_data.csv' with your actual file)
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv", header=TRUE)
+
+# Convert categorical variables to numeric
+convert_to_numeric <- function(x) {
+  if (is.factor(x) || is.character(x)) {
+    return(as.numeric(as.factor(x)))  # Convert categorical variables to numeric
+  } else {
+    return(x)
+  }
+}
+
+# Apply the function to all columns
+data_numeric <- as.data.frame(lapply(data, convert_to_numeric))
+
+# Check data suitability for factor analysis
+# Bartlett's test of sphericity (should be significant)
+bartlett.test(data_numeric)
+
+# Kaiser-Meyer-Olkin (KMO) test (should be > 0.6 for sampling adequacy)
+KMO(data_numeric)
+
+# Determine the optimal number of factors using scree plot
+fa.parallel(data_numeric, fa="fa", n.iter=100)
+
+# Choose an appropriate number of factors (e.g., based on eigenvalues >1 or scree plot)
+num_factors <- 3  # Adjust based on scree plot or parallel analysis
+
+# Perform Exploratory Factor Analysis
+efa_model <- fa(data_numeric, nfactors=num_factors, rotate="varimax", fm="ml")
+
+# Print factor loadings
+print(efa_model$loadings)
+
+# Visualize factor loadings
+fa.diagram(efa_model)
+
+# Get factor scores (optional)
+factor_scores <- factor.scores(data_numeric, efa_model)
+
+# View factor scores
+head(factor_scores$scores)
+
+```
+```{r}
+
+# Load required library
+library(lavaan)
+
+# Load dataset (replace 'my_data.csv' with your actual file)
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv", header=TRUE)
+
+# Convert categorical variables to numeric
+convert_to_numeric <- function(x) {
+  if (is.factor(x) || is.character(x)) {
+    return(as.numeric(as.factor(x)))  # Convert categorical variables to numeric
+  } else {
+    return(x)
+  }
+}
+
+# Apply function to all columns
+data_numeric <- as.data.frame(lapply(data, convert_to_numeric))
+
+# Define the CFA model (Modify this structure based on your theory)
+cfa_model <- '
+  Factor1 =~ Q14 + Q21 + Q7 + Q4 + Q5 + Q16 + Q15
+  Factor2 =~ Q2 + Q11 + Q17 + Q3 + Q9 +Q1 + Q10
+  Factor3 =~ Q20 + Q8 + Q19 + Q22 + Q18 +Q12 +Q13 +Q6
+'
+
+# Fit the CFA model
+fit <- cfa(cfa_model, data = data_numeric, std.lv = TRUE)
+
+# Summary with fit measures
+summary(fit, fit.measures = TRUE, standardized = TRUE)
+
+# Check model fit indices
+fitMeasures(fit)
+
+# Visualize standardized loadings
+library(semPlot)
+semPaths(fit, whatLabels = "std", layout = "tree", edge.label.cex = 0.8)
+```
+```{r}
+# Load necessary library
+library(irr)
+
+# Function to preprocess the data (handle multiple values in cells)
+preprocess_data <- function(data) {
+  # Convert all columns to character to handle multiple values
+  data <- as.data.frame(lapply(data, as.character), stringsAsFactors = FALSE)
+  
+  # Split cells with multiple values and take the first value
+  for (col in colnames(data)) {
+    data[[col]] <- sapply(strsplit(data[[col]], ","), function(x) x[1])
+  }
+  
+  # Convert back to numeric
+  data <- as.data.frame(lapply(data, as.numeric))
+  
+  return(data)
+}
+
+# Function to calculate Gwet's AC1
+gwet_ac1 <- function(data) {
+  # Preprocess the data
+  data <- preprocess_data(data)
+  
+  # Convert data to a matrix
+  data <- as.matrix(data)
+  
+  # Calculate Gwet's AC1 using the irr package
+  ac1 <- kappa2(data, "gwet")
+  
+  return(ac1$value)
+}
+
+# Load the dataset
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Calculate Gwet's AC1
+ac1_value <- gwet_ac1(data)
+print(paste("Gwet's AC1:", ac1_value))
+```
+```{r}
+# Load necessary library
+library(irr)
+
+# Function to preprocess the data (handle multiple values in cells)
+preprocess_data <- function(data) {
+  # Convert all columns to character to handle multiple values
+  data <- as.data.frame(lapply(data, as.character), stringsAsFactors = FALSE)
+  
+  # Split cells with multiple values and take the first value
+  for (col in colnames(data)) {
+    data[[col]] <- sapply(strsplit(data[[col]], ","), function(x) x[1])
+  }
+  
+  # Convert back to numeric
+  data <- as.data.frame(lapply(data, as.numeric))
+  
+  return(data)
+}
+
+# Function to calculate Gwet's AC1
+gwet_ac1 <- function(data) {
+  # Preprocess the data
+  data <- preprocess_data(data)
+  
+  # Convert data to a matrix
+  data <- as.matrix(data)
+  
+  # Number of subjects and raters
+  n_subjects <- nrow(data)
+  n_raters <- ncol(data)
+  
+  # Calculate the observed agreement (Po)
+  agreement_matrix <- matrix(0, nrow = n_subjects, ncol = n_subjects)
+  for (i in 1:n_subjects) {
+    for (j in 1:n_subjects) {
+      agreement_matrix[i, j] <- sum(data[i, ] == data[j, ]) / n_raters
+    }
+  }
+  Po <- mean(agreement_matrix[lower.tri(agreement_matrix)])
+  
+  # Calculate the expected agreement (Pe)
+  category_counts <- table(data)
+  category_proportions <- category_counts / sum(category_counts)
+  Pe <- sum(category_proportions^2)
+  
+  # Calculate Gwet's AC1
+  AC1 <- (Po - Pe) / (1 - Pe)
+  
+  return(AC1)
+}
+
+# Load the dataset
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Calculate Gwet's AC1
+ac1_value <- gwet_ac1(data)
+print(paste("Gwet's AC1:", ac1_value))
+```
+```{r}
+# Function to preprocess the data (handle multiple values in cells)
+preprocess_data <- function(data) {
+  # Convert all columns to character to handle multiple values
+  data <- as.data.frame(lapply(data, as.character), stringsAsFactors = FALSE)
+  
+  # Split cells with multiple values and take the first value
+  for (col in colnames(data)) {
+    data[[col]] <- sapply(strsplit(data[[col]], ","), function(x) x[1])
+  }
+  
+  # Convert back to numeric
+  data <- as.data.frame(lapply(data, as.numeric))
+  
+  return(data)
+}
+
+# Function to calculate Po and Pe
+calculate_po_pe <- function(data) {
+  # Preprocess the data
+  data <- preprocess_data(data)
+  
+  # Convert data to a matrix
+  data <- as.matrix(data)
+  
+  # Number of subjects and raters
+  n_subjects <- nrow(data)
+  n_raters <- ncol(data)
+  
+  # Calculate observed agreement (Po)
+  agreement_matrix <- matrix(0, nrow = n_subjects, ncol = n_subjects)
+  for (i in 1:n_subjects) {
+    for (j in 1:n_subjects) {
+      agreement_matrix[i, j] <- sum(data[i, ] == data[j, ]) / n_raters
+    }
+  }
+  Po <- mean(agreement_matrix[lower.tri(agreement_matrix)])
+  
+  # Calculate expected agreement (Pe)
+  category_counts <- table(data)
+  category_proportions <- category_counts / sum(category_counts)
+  Pe <- sum(category_proportions^2)
+  
+  return(list(Po = Po, Pe = Pe))
+}
+
+# Load the dataset
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Calculate Po and Pe
+results <- calculate_po_pe(data)
+print(paste("Observed Agreement (Po):", results$Po))
+print(paste("Expected Agreement (Pe):", results$Pe))
+```
+```{r}
+# Function to preprocess the data (handle multiple values in cells)
+preprocess_data <- function(data) {
+  # Convert all columns to character to handle multiple values
+  data <- as.data.frame(lapply(data, as.character), stringsAsFactors = FALSE)
+  
+  # Combine multiple values into a single string (e.g., "1,2" becomes "1_2")
+  for (col in colnames(data)) {
+    data[[col]] <- sapply(data[[col]], function(x) gsub(",", "_", x))
+  }
+  
+  return(data)
+}
+
+# Function to calculate Po and Pe
+calculate_po_pe <- function(data) {
+  # Preprocess the data
+  data <- preprocess_data(data)
+  
+  # Convert data to a matrix
+  data <- as.matrix(data)
+  
+  # Number of subjects and raters
+  n_subjects <- nrow(data)
+  n_raters <- ncol(data)
+  
+  # Calculate observed agreement (Po)
+  agreement_matrix <- matrix(0, nrow = n_subjects, ncol = n_subjects)
+  for (i in 1:n_subjects) {
+    for (j in 1:n_subjects) {
+      # Count the number of agreements (exact matches)
+      agreement_matrix[i, j] <- sum(data[i, ] == data[j, ]) / n_raters
+    }
+  }
+  Po <- mean(agreement_matrix[lower.tri(agreement_matrix)])
+  
+  # Calculate expected agreement (Pe)
+  category_counts <- table(data)
+  category_proportions <- category_counts / sum(category_counts)
+  Pe <- sum(category_proportions^2)
+  
+  return(list(Po = Po, Pe = Pe))
+}
+
+# Load the dataset
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv")
+
+# Calculate Po and Pe
+results <- calculate_po_pe(data)
+print(paste("Observed Agreement (Po):", results$Po))
+print(paste("Expected Agreement (Pe):", results$Pe))
+```
+```{r}
+# Load required libraries # If not already installed
+
+library(psych)
+library(nFactors)
+
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\gg.csv", header=TRUE)
+
+# Convert categorical variables to numeric
+convert_to_numeric <- function(x) {
+  if (is.factor(x) || is.character(x)) {
+    return(as.numeric(as.factor(x)))  # Convert categorical variables to numeric
+  } else {
+    return(x)
+  }
+}
+
+# Apply function to all columns
+df <- as.data.frame(lapply(data, convert_to_numeric))
+# Step 1: Compute Eigenvalues
+cor_matrix <- cor(df, use = "pairwise.complete.obs")  # Compute correlation matrix
+eigenvalues <- eigen(cor_matrix)$values  
+
+# Step 2: Apply Kaiser Criterion (Eigenvalues > 1)
+kaiser_factors <- sum(eigenvalues > 1)
+cat("Number of factors suggested by Kaiser Criterion:", kaiser_factors, "\n")
+
+# Step 3: Perform Velicer's MAP Test
+map_result <- VSS(df, fm = "ml")  # Minimum Average Partial Test using Maximum Likelihood
+cat("Number of factors suggested by MAP Test:", which.min(map_result$map), "\n")
+
+# Step 4: Visualize Scree Plot Again
+fa.parallel(df, fa = "both", n.iter = 100, main = "Parallel Analysis Scree Plot")
+
+```
+
+
+
+

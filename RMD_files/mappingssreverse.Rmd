@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# Load required libraries
+
+library(readxl)   # For reading Excel files
+library(openxlsx) # For writing Excel files
+
+# Define original mappings (Text to Numeric)
+mappings <- list(
+  Q1 = c("1" = "Male", "2" = "Female", "3" = "Prefer not to say"),
+  Q2 = c("1" = "First year", "2" = "Second year", "3" = "Third year", "4" = "Fourth year", "5" = "Previous year", "6" = "Final year"),
+  Q3 = c("1" = "STEM", "2" = "Non-STEM"),
+  Q4 = c("1" = "Passion/Interest", "2" = "Career Opportunities", "3" = "Family Influence", "4" = "Financial stability", "5" = "Flexibility in Career Options", "6" = "Other"),
+  Q5 = c("1" = "More than 70%", "2" = "Between 60 and 69.99%", "3" = "Between 50 and 59.99%", "4" = "Between 40 and 49.99%"),
+  Q6 = c("1" = "Self-study", "2" = "Group discussions", "3" = "Tutoring sessions", "4" = "Online Learning Resources"),
+  Q7 = c("1" = "Less than 3 hours", "2" = "3 to 5 hours", "3" = "5 to 7 hours", "4" = "More than 7 hours"),
+ Q8 = c("1" = "Seeking guidance from professors/peers", "2" = "Using additional online learning resources", "3" = "Work harder independently", "4" = "Joining study groups"),
+  Q9 = c("1" = "Sports and Fitness", "2" = "Arts & Creativity", "3" = "Social and Community Service", "4" = "Internship", "5" = "Other"),
+  Q10 = c("1" = "Regularly", "2" = "Sometimes", "3" = "Rarely", "4" = "Never"),
+  Q11 = c("1" = "Industry (Corporate/Government Jobs)", "2" = "Research/Academia", "3" = "Entrepreneurship", "4" = "Freelancing/Independent Work", "5" = "Other"),
+  Q12 = c("1" = "Technical skills", "2" = "Creativity", "3" = "Problem-solving", "4" = "Communication", "5" = "Networking", "6" = "Others"),
+  Q13 = c("1" = "Elite Class", "2" = "Upper Middle Class", "3" = "Lower Middle Class", "4" = "Below Lower Middle"),
+ Q14 = c("1" = "yes", "2" = "no"),
+  Q15 = c("1" = "Very poorly", "2" = "Poorly", "3" = "Neutral", "4" = "Well", "5" = "Very well"),
+  Q16 = c("1" = "Very unsatisfied", "2" = "Unsatisfied", "3" = "Neutral", "4" = "Satisfied", "5" = "Very Satisfied"),
+  Q17 = c("1" = "High earning potential", "2" = "Flexibility and creativity", "3" = "Contribution to society", "4" = "Job security", "5" = "Personal growth", "6" = "Others"),
+  Q18 = c("1" = "Heavy Workload", "2" = "Limited Job Opportunities", "3" = "High Competition", "4" = "Lack of Industry Recognition", "5" = "Other"),
+  Q19 = c("1" = "Technological advancements", "2" = "Interdisciplinary applications", "3" = "Growing Demand in the Job Market", "4" = "Other"),
+  Q20 = c("1" = "Job automation", "2" = "Market saturation", "3" = "Economic downturns", "4" = "Lack of funding or resources", "5" = "Others"),
+  Q21 = c("1" = "yes", "2" = "no", "3" = "maybe"),
+  Q22 = c("1" = "yes", "2" = "no", "3" = "maybe")
+)
+
+# Reverse the mappings: Text to Number
+reverse_mappings <- lapply(mappings, function(map) setNames(names(map), map))
+
+# Function to reverse map responses (Text -> Numeric)
+reverse_map_responses <- function(sheet) {
+  # Extract question numbers from the first row and set as column names
+  colnames(sheet) <- sheet[1, ]
+  sheet <- sheet[-1, ]
+  
+  # Reverse map responses for each column
+  for (question in names(reverse_mappings)) {
+    matched_col <- grep(paste0("^", question, "$"), colnames(sheet), value = TRUE, ignore.case = TRUE)
+    
+    if (length(matched_col) > 0) {
+      sheet[[paste0(question, "_Numeric")]] <- sapply(sheet[[matched_col]], function(x) {
+        if (is.na(x) || x == "") {
+          return(NA)  # Handle empty cells
+        }
+        # Split multiple responses, map them, and join with commas
+        responses <- trimws(unlist(strsplit(as.character(x), split = ",\\s*")))
+        numeric_values <- na.omit(reverse_mappings[[question]][responses])
+        if (length(numeric_values) > 0) {
+          return(paste(numeric_values, collapse = ","))
+        } else {
+          return(NA)  # If no mapping is found
+        }
+      })
+    }
+  }
+  return(sheet)
+}
+
+# Process the Excel file (Text -> Numeric)
+reverse_process_excel <- function(input_file, output_file) {
+  # Ensure the output directory exists
+  dir.create(dirname(output_file), showWarnings = FALSE, recursive = TRUE)
+
+  # Read all sheets
+  sheets <- excel_sheets(input_file)
+  data_list <- setNames(
+    lapply(sheets, function(sheet_name) {
+      sheet_data <- read_excel(input_file, sheet = sheet_name, col_names = FALSE)
+      reverse_map_responses(sheet_data)
+    }),
+    sheets
+  )
+
+  # Write back to a new Excel file
+  write.xlsx(data_list, output_file, rowNames = FALSE)
+  print(paste("Numeric data saved to", output_file))
+}
+
+# Example usage
+input_file <- "C:\\Users\\ALOK\\Desktop\\project\\cleaneddata.xlsx"  # Replace with your actual file
+output_file <- "C:\\Users\\ALOK\\Desktop\\project\\factor.xlsx"    # Replace with your actual output path
+
+# Uncomment to run
+reverse_process_excel(input_file, output_file)
+
+```

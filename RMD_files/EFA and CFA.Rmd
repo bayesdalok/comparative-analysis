@@ -1,0 +1,84 @@
+---
+title: "CFA"
+output: html_document
+---
+
+```{r}
+# Install packages if needed
+#install.packages(c("psych", "GPArotation", "lavaan", "semPlot", "tidyverse"))
+
+# Load libraries
+library(psych)
+library(GPArotation)
+library(lavaan)
+library(semPlot)
+library(tidyverse)
+
+# Read the data
+data <- read.csv("C:\\Users\\ALOK\\Desktop\\project\\cleaneddata.csv")
+
+# View the structure of the data
+str(data)
+```
+Data Preparation
+```{r}
+# Convert categorical variables to factors if needed
+data$Gender <- as.factor(data$Gender)
+data$Year <- as.factor(data$Year)
+data$Stream <- as.factor(data$Stream)
+data$Performance <- as.factor(data$Performance)
+data$Satisfaction <- as.factor(data$Satisfaction)
+
+# For EFA/CFA, we'll focus on numeric or likert-scale variables
+# Let's select appropriate variables - you may need to adjust this based on your research questions
+
+# Example: Selecting variables that might form latent constructs
+efa_vars <- data %>% 
+  select(Rating, StudyHours, ExtracurricularFreq, Satisfaction, Performance)
+
+# Convert ordinal variables to numeric if needed
+# For example, if Satisfaction is ordinal (Very poorly to Very well)
+efa_vars$Satisfaction <- as.numeric(factor(efa_vars$Satisfaction, 
+                                         levels = c("Very poorly", "Poorly", "Neutral", 
+                                                   "Well", "Very well")))
+
+# Check for missing data
+sum(is.na(efa_vars))
+
+# Handle missing data (simple imputation for demonstration)
+efa_vars <- na.omit(efa_vars)  # or use more sophisticated imputation
+
+efa_vars_numeric <- as.data.frame(lapply(efa_vars, function(x) {
+  if (is.factor(x) || is.character(x)) {
+    as.numeric(as.factor(x))  # or just as.numeric(x) if it's a factor already coded properly
+  } else {
+    x
+  }
+}))
+efa_vars_scaled <- scale(efa_vars_numeric)
+
+
+# Standardize variables (often recommended for EFA)
+#efa_vars_scaled <- scale(efa_vars)
+```
+Exploratory Factor Analysis
+```{r}
+# Determine number of factors
+# Parallel analysis
+fa.parallel(efa_vars_scaled, fm = "ml", fa = "fa")
+
+# Scree plot
+scree(efa_vars_scaled, factors = TRUE)
+
+# Perform EFA with suggested number of factors (e.g., 2)
+efa_result <- fa(efa_vars_scaled, nfactors = 2, rotate = "oblimin", fm = "ml")
+
+# View EFA results
+print(efa_result$loadings, cutoff = 0.3)
+fa.diagram(efa_result)
+
+# Get factor scores
+factor_scores <- efa_result$scores
+```
+
+

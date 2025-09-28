@@ -1,0 +1,393 @@
+---
+title: "Comprehensive Analysis of Student Academic and Career Data"
+author: "Data Analyst"
+date: '`r Sys.Date()`'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    code_folding: show
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+```{r, warning=FALSE}
+# Load necessary libraries
+library(tidyverse)
+library(readr)
+library(janitor)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(ggpubr)
+library(corrplot)
+library(viridis)
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+library(reshape2)
+library(psych)
+# Load the data
+data <- read_csv("C:\\Users\\ALOK\\Desktop\\project\\cleaneddata.csv") %>% clean_names()
+
+# Initial exploration
+glimpse(data)
+```
+```{r}
+# Summary statistics for numerical variables
+summary(data %>% select(where(is.numeric)))
+
+# Structure of the data
+str(data)
+
+# Check for missing values
+colSums(is.na(data)) %>% kable() %>% kable_styling()
+```
+Handling multiple response columns
+```{r}
+# Function to split multiple response columns
+split_multiple_responses <- function(df, column_name) {
+  df %>%
+    separate_rows({{column_name}}, sep = ",\\s*") %>%
+    mutate({{column_name}} := trimws({{column_name}})) %>%
+    filter({{column_name}} != "")
+}
+
+# List of columns with multiple responses
+multi_response_cols <- c("reasons", "study_mode", "resources_used", "cocurriculars", 
+                        "career_goals", "skills", "strengths", "challenges", 
+                        "opportunities", "threats")
+
+# Create separate data frames for each multi-response column
+multi_response_dfs <- list()
+for (col in multi_response_cols) {
+  multi_response_dfs[[col]] <- split_multiple_responses(data, !!sym(col))
+}
+```
+Gender Distribution
+```{r}
+# Gender distribution
+gender_plot <- data %>%
+  count(gender) %>%
+  ggplot(aes(x = gender, y = n, fill = gender)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Gender Distribution", x = "Gender", y = "Count") +
+  theme_minimal()
+
+# Year distribution
+year_plot <- data %>%
+  count(year) %>%
+  ggplot(aes(x = year, y = n, fill = year)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Year Distribution", x = "Academic Year", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Stream distribution
+stream_plot <- data %>%
+  count(stream) %>%
+  ggplot(aes(x = stream, y = n, fill = stream)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Stream Distribution", x = "Stream", y = "Count") +
+  theme_minimal()
+
+# Class distribution
+class_plot <- data %>%
+  count(class) %>%
+  ggplot(aes(x = class, y = n, fill = class)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Social Class Distribution", x = "Class", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Arrange plots
+ggarrange(gender_plot, year_plot, stream_plot, class_plot, ncol = 2, nrow = 2)
+```
+Reasons for choosing field of study
+```{r}
+reasons_analysis <- multi_response_dfs$reasons %>%
+  count(reasons) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+
+# Plot
+reasons_analysis %>%
+  ggplot(aes(x = reorder(reasons, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)")), hjust = 0) +
+  labs(title = "Reasons for Choosing Field of Study", 
+       x = "Reason", y = "Count") +
+  coord_flip() +
+  theme_minimal()+
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) 
+```
+Study modes
+```{r}
+study_mode_analysis <- multi_response_dfs$study_mode %>%
+  count(study_mode) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+multi_response_dfs$study_mode
+# Plot
+study_mode_analysis %>%
+  ggplot(aes(x = reorder(study_mode, n), y = n)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)")), hjust = -0.1) +
+  labs(title = "Study Modes Used by Students", 
+       x = "Study Mode", y = "Count") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) 
+
+```
+Resources Used
+```{r}
+resources_used_analysis <- multi_response_dfs$resources_used %>%
+  count(resources_used) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+
+# Plot
+resources_used_analysis %>%
+  ggplot(aes(x = reorder(resources_used, n), y = n)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)"), hjust = -0.1)) +
+  labs(title = "Resources Used by Students", 
+       x = "Resource", y = "Count") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.25))) 
+```
+Academic Performance Analysis
+```{r}
+# Performance distribution
+performance_plot <- data %>%
+  count(performance) %>%
+  ggplot(aes(x = performance, y = n, fill = performance)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Performance Distribution", x = "Performance Range", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Performance by stream
+performance_stream_plot <- data %>%
+  count(stream, performance) %>%
+  ggplot(aes(x = performance, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Performance by Stream", x = "Performance Range", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Performance by gender
+performance_gender_plot <- data %>%
+  count(gender, performance) %>%
+  ggplot(aes(x = performance, y = n, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Performance by Gender", x = "Performance Range", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Arrange plots
+ggarrange(performance_plot, performance_stream_plot, performance_gender_plot, ncol = 1)
+```
+Correlation Analysis
+```{r}
+# Convert categorical variables to factors for correlation analysis
+data_for_corr <- data %>%
+  mutate(
+    gender = as.factor(gender),
+    year = as.factor(year),
+    stream = as.factor(stream),
+    first_choice = as.factor(first_choice),
+    satisfaction = as.factor(satisfaction),
+    switch = as.factor(switch),
+    recommendation = as.factor(recommendation)
+  )
+
+# Create numeric versions for correlation
+numeric_data <- data_for_corr %>%
+  mutate(
+    gender_num = as.numeric(gender),
+    year_num = as.numeric(year),
+    stream_num = as.numeric(stream),
+    first_choice_num = as.numeric(first_choice),
+    satisfaction_num = as.numeric(satisfaction),
+    switch_num = as.numeric(switch),
+    recommendation_num = as.numeric(recommendation)
+  ) %>%
+  select_if(is.numeric)
+
+# Correlation matrix
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Plot correlation matrix
+corrplot(cor_matrix, method = "color", type = "upper", 
+         tl.col = "black", tl.srt = 45,
+         addCoef.col = "black", number.cex = 0.7,
+         col = colorRampPalette(c("blue", "white", "red"))(200),
+         title = "Correlation Matrix of Numeric Variables",
+         mar = c(0,0,1,0))
+```
+Career Goals and aspirations
+```{r}
+career_goals_analysis <- multi_response_dfs$career_goals %>%
+  count(career_goals) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+
+# Plot
+career_goals_analysis %>%
+  ggplot(aes(x = reorder(career_goals, n), y = n)) +
+  geom_bar(stat = "identity", fill = "darkorange") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)"), hjust = -0.1)) +
+  labs(title = "Career Goals of Students", 
+       x = "Career Goal", y = "Count") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) 
+```
+Satisfaction and rating analysis
+```{r}
+# Satisfaction distribution
+satisfaction_plot <- data %>%
+  count(satisfaction) %>%
+  ggplot(aes(x = satisfaction, y = n, fill = satisfaction)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(title = "Satisfaction Distribution", x = "Satisfaction Level", y = "Count") +
+  theme_minimal()
+
+# Rating distribution
+rating_plot <- data %>%
+  ggplot(aes(x = rating)) +
+  geom_histogram(binwidth = 0.5, fill = "steelblue", color = "black") +
+  labs(title = "Rating Distribution", x = "Rating", y = "Count") +
+  theme_minimal()
+
+# Satisfaction by stream
+satisfaction_stream_plot <- data %>%
+  count(stream, satisfaction) %>%
+  ggplot(aes(x = satisfaction, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Satisfaction by Stream", x = "Satisfaction Level", y = "Count") +
+  theme_minimal()
+
+# Rating by stream
+rating_stream_plot <- data %>%
+  ggplot(aes(x = stream, y = rating, fill = stream)) +
+  geom_boxplot() +
+  labs(title = "Rating by Stream", x = "Stream", y = "Rating") +
+  theme_minimal()
+
+# Arrange plots
+ggarrange(satisfaction_plot, rating_plot, satisfaction_stream_plot, rating_stream_plot, ncol = 2, nrow = 2)
+```
+Challenges faced by students
+```{r}
+challenges_analysis <- multi_response_dfs$challenges %>%
+  count(challenges) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+
+# Plot
+challenges_analysis %>%
+  ggplot(aes(x = reorder(challenges, n), y = n)) +
+  geom_bar(stat = "identity", fill = "red") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)"), hjust = -0.1)) +
+  labs(title = "Challenges Faced by Students", 
+       x = "Challenge", y = "Count") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) 
+```
+Oppurtunities Identified by students
+```{r}
+opportunities_analysis <- multi_response_dfs$opportunities %>%
+  count(opportunities) %>%
+  arrange(desc(n)) %>%
+  mutate(percentage = round(n/nrow(data)*100, 1))
+
+# Plot
+opportunities_analysis %>%
+  ggplot(aes(x = reorder(opportunities, n), y = n)) +
+  geom_bar(stat = "identity", fill = "green") +
+  geom_text(aes(label = paste0(n, " (", percentage, "%)"), hjust = -0.1)) +
+  labs(title = "Opportunities Identified by Students", 
+       x = "Opportunity", y = "Count") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) 
+```
+Word Cloud of strenghts
+```{r}
+strengths_text <- paste(multi_response_dfs$strengths$strengths, collapse = " ")
+strengths_corpus <- Corpus(VectorSource(strengths_text))
+
+strengths_corpus <- strengths_corpus %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace) %>%
+  tm_map(content_transformer(tolower)) %>%
+  tm_map(removeWords, stopwords("english"))
+
+tdm <- TermDocumentMatrix(strengths_corpus)
+m <- as.matrix(tdm)
+word_freq <- sort(rowSums(m), decreasing = TRUE)
+
+wordcloud(words = names(word_freq), freq = word_freq,
+          max.words = 50, random.order = FALSE,
+          colors = brewer.pal(8, "Dark2"))
+```
+Chi Square test for gender and stream
+```{r}
+chi_test <- chisq.test(table(data$gender, data$stream))
+chi_test
+```
+ANOVA for rating by year
+```{r}
+anova_result <- aov(rating ~ year, data = data)
+summary(anova_result)
+```
+t test for rating by gender
+```{r}
+t_test <- t.test(rating ~ gender, data = data)
+t_test
+```
+Multiple Correspondence Analysis
+```{r}
+#Uncomment to run (requires FactoMineR package)
+library(factoextra)
+library(FactoMineR)
+# # Select categorical variables for MCA
+cat_vars <- data %>% 
+   select(gender, year, stream, first_choice, satisfaction, switch, recommendation)
+# 
+# # Perform MCA
+ mca_result <- MCA(cat_vars, graph = FALSE)
+# 
+# # Plot MCA
+fviz_mca_var(mca_result, repel = TRUE)
+```
+```{r}
+library(Factoshiny)
+remove.packages("Factoshiny")
+
+result = Factoshiny(data)
+Factoshiny(result)
+```
+
+
+
+
+
+
+

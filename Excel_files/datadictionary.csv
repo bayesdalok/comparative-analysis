@@ -1,0 +1,23 @@
+ColumnName,DataType,ExampleValue
+Gender,character,Female
+Year,character,Third year
+Stream,character,Non-STEM
+Reasons,character,"Career Opportunities, Flexibility in Career Options"
+Performance,character,Between 60 and 69.99%
+StudyMode,character,"Self-study, Group discussions"
+StudyHours,character,3 to 5 hours
+ResourcesUsed,character,"Seeking guidance from professors/peers, Using additional online learning resources, Work harder independently"
+Cocurriculars,character,"Arts & Creativity, Social and Community Service, Internship"
+ExtracurricularFreq,character,Sometimes
+CareerGoals,character,"Research/Academia, Freelancing/Independent Work"
+Skills,character,"Creativity, Problem-solving, Communication, Networking"
+Class,character,Upper Middle Class
+FirstChoice,character,no
+Satisfaction,character,Poorly
+Rating,numeric,4
+Strengths,character,"High earning potential, Flexibility and creativity, Job security"
+Challenges,character,"Heavy Workload, High Competition"
+Opportunities,character,Interdisciplinary applications
+Threats,character,Lack of funding or resources
+Switch,character,yes
+Recommendation,character,yes
